@@ -8,6 +8,16 @@ import {
   configureAlertThresholdSchema,
 } from '../schemas/alert-schema';
 
+/**
+ * @openapi
+ * /alerts:
+ *   get: { tags: [Alerts], summary: List alerts, security: [{ bearerAuth: [] }], responses: { '200': { description: Alert list }, '401': { description: Authentication required } } }
+ * /alerts/{alertId}/resolve:
+ *   patch: { tags: [Alerts], summary: Resolve an alert, security: [{ bearerAuth: [] }], parameters: [{ in: path, name: alertId, required: true, schema: { type: string } }], responses: { '200': { description: Alert resolved }, '400': { description: Invalid identifier }, '401': { description: Authentication required }, '404': { description: Alert not found } } }
+ * /alerts/thresholds:
+ *   post: { tags: [Alerts], summary: Configure an alert threshold, security: [{ bearerAuth: [] }], responses: { '201': { description: Threshold configured }, '400': { description: Invalid request }, '401': { description: Authentication required }, '404': { description: Counter not found } } }
+ */
+
 export const createAlertRouter = (
   controller: AlertController,
   jwtSecret: string,

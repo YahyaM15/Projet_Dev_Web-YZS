@@ -2,6 +2,10 @@ import path from 'node:path';
 
 import swaggerJSDoc, { Options } from 'swagger-jsdoc';
 
+const toGlobPath = (relativePath: string): string => {
+  return path.resolve(__dirname, relativePath).replaceAll('\\', '/');
+};
+
 const swaggerOptions: Options = {
   definition: {
     openapi: '3.0.3',
@@ -30,8 +34,8 @@ const swaggerOptions: Options = {
     },
   },
   apis: [
-    path.resolve(process.cwd(), 'src/routes/*.ts'),
-    path.resolve(process.cwd(), 'src/controllers/*.ts'),
+    toGlobPath('../routes/**/*.ts'),
+    toGlobPath('../controllers/**/*.ts'),
   ],
 };
 
