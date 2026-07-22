@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  RESIDENTIAL
+}
+
+enum ResourceType {
+  WATER
+  ELECTRICITY
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(RESIDENTIAL)
+  createdAt DateTime @default(now())
+  meters    Meter[]
+}
+
+model Meter {
+  id           String              @id @default(uuid())
+  serialNumber String              @unique
+  type         ResourceType
+  location     String
+  userId       String
+  user         User                @relation(fields: [userId], references: [id])
+  records      ConsumptionRecord[]
+  alerts       Alert[]
+}
+
+model ConsumptionRecord {
+  id         String   @id @default(uuid())
+  meterId    String
+  meter      Meter    @relation(fields: [meterId], references: [id])
+  value      Float
+  recordDate DateTime @default(now())
+  isAnomaly  Boolean  @default(false)
+}
+
+model Alert {
+  id         String        @id @default(uuid())
+  meterId    String
+  meter      Meter         @relation(fields: [meterId], references: [id])
+  type       ResourceType
+  message    String
+  severity   AlertSeverity @default(MEDIUM)
+  isResolved Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+}
