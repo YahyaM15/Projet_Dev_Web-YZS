@@ -2,7 +2,7 @@ import { Router } from 'express';
 
 import { AuthController } from '../controllers/auth-controller';
 import { authenticate } from '../middlewares/auth-middleware';
-import { loginRateLimit } from '../middlewares/rate-limit-middleware';
+import { authRateLimit } from '../middlewares/rate-limit-middleware';
 import { validate } from '../middlewares/validate-middleware';
 import { loginSchema, registerSchema } from '../schemas/auth-schema';
 
@@ -24,9 +24,10 @@ export const createAuthRouter = (
 ): Router => {
   const router = Router();
   const authMiddleware = authenticate(jwtSecret);
+  router.use(authRateLimit);
 
   router.post('/register', validate(registerSchema), controller.register);
-  router.post('/login', loginRateLimit, validate(loginSchema), controller.login);
+  router.post('/login', validate(loginSchema), controller.login);
   router.post('/logout', authMiddleware, controller.logout);
   router.get('/me', authMiddleware, controller.me);
 

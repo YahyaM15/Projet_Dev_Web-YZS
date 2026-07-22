@@ -5,6 +5,7 @@ import { authenticate } from '../middlewares/auth-middleware';
 import { validate } from '../middlewares/validate-middleware';
 import {
   alertIdSchema,
+  alertFilterSchema,
   configureAlertThresholdSchema,
 } from '../schemas/alert-schema';
 
@@ -25,7 +26,7 @@ export const createAlertRouter = (
   const router = Router();
   router.use(authenticate(jwtSecret));
 
-  router.get('/', controller.getAlerts);
+  router.get('/', validate(alertFilterSchema, 'query'), controller.getAlerts);
   router.patch(
     '/:alertId/resolve',
     validate(alertIdSchema, 'params'),

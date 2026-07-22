@@ -2,7 +2,11 @@ import { Meter, ResourceType } from '@prisma/client';
 
 import { CounterDao } from '../dao/counter.dao';
 import { HttpError } from '../errors/http-error';
-import { CreateCounterInput, RecordIndexInput } from '../schemas/resource-schema';
+import {
+  CreateCounterInput,
+  RecordIndexInput,
+  UpdateCounterInput,
+} from '../schemas/resource-schema';
 import { CalculationResult, CalculationService } from './calculation.service';
 
 export interface ConsumptionStats {
@@ -43,6 +47,19 @@ export class ResourceService {
       type: toResourceType(input.type),
       location: input.address,
       userId,
+    });
+  }
+
+  public async updateCounter(
+    counterId: string,
+    userId: string,
+    input: UpdateCounterInput,
+  ): Promise<Meter> {
+    await this.getCounterById(counterId, userId);
+    return this.counterDao.updateMeter(counterId, {
+      ...(input.type === undefined ? {} : { type: toResourceType(input.type) }),
+      ...(input.counterNumber === undefined ? {} : { serialNumber: input.counterNumber }),
+      ...(input.address === undefined ? {} : { location: input.address }),
     });
   }
 

@@ -2,12 +2,7 @@ import 'dotenv/config';
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import cookieParser from 'cookie-parser';
-import express, { Express } from 'express';
-import rateLimit from 'express-rate-limit';
-import swaggerUi from 'swagger-ui-express';
-
-import { swaggerSpec } from './config/swagger';
+import { createApp } from './app';
 import { AlertController } from './controllers/alert-controller';
 import { AuthController } from './controllers/auth-controller';
 import { ResourceController } from './controllers/resource-controller';
@@ -15,7 +10,6 @@ import { AlertDao } from './dao/alert.dao';
 import { CounterDao } from './dao/counter.dao';
 import { MetricDao } from './dao/metric.dao';
 import { UserDao } from './dao/user.dao';
-import { errorMiddleware } from './middlewares/error-middleware';
 import { createApiRouter } from './routes';
 import { AlertService } from './services/alert.service';
 import { AuthService } from './services/auth.service';
@@ -47,33 +41,19 @@ const calculationService = new CalculationService(metricDao);
 const resourceService = new ResourceService(counterDao, calculationService);
 const alertService = new AlertService(alertDao, counterDao);
 
-const app: Express = express();
 const configuredPort = Number(process.env.PORT);
 const port = Number.isInteger(configuredPort) && configuredPort > 0
   ? configuredPort
   : 5000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(
-  rateLimit({
-    windowMs: 15 * 60_000,
-    limit: 100,
-    standardHeaders: 'draft-8',
-    legacyHeaders: false,
-  }),
-);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.use(
-  createApiRouter({
+const app = createApp({
+  apiRouter: createApiRouter({
     jwtSecret,
     authController: new AuthController(authService),
     resourceController: new ResourceController(resourceService),
     alertController: new AlertController(alertService),
   }),
-);
-app.use(errorMiddleware);
+});
 
 const server = app.listen(port, (): void => {
   console.log(`🚀 Server running at http://localhost:${port}`);

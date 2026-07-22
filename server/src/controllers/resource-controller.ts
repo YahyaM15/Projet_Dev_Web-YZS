@@ -1,7 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 
 import { HttpError } from '../errors/http-error';
-import { CreateCounterInput, RecordIndexInput } from '../schemas/resource-schema';
+import {
+  CreateCounterInput,
+  RecordIndexInput,
+  UpdateCounterInput,
+} from '../schemas/resource-schema';
 import { ResourceService } from '../services/resource.service';
 
 const getAuthenticatedUserId = (req: Request): string => {
@@ -57,6 +61,23 @@ export class ResourceController {
     try {
       const result = await this.resourceService.recordMetric(getAuthenticatedUserId(req), req.body);
       res.status(201).json({ success: true, data: result });
+    } catch (error: unknown) {
+      next(error);
+    }
+  };
+
+  public updateCounter = async (
+    req: Request<{ counterId: string }, unknown, UpdateCounterInput>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const counter = await this.resourceService.updateCounter(
+        req.params.counterId,
+        getAuthenticatedUserId(req),
+        req.body,
+      );
+      res.json({ success: true, data: counter });
     } catch (error: unknown) {
       next(error);
     }

@@ -23,6 +23,10 @@ export class CounterDao {
     });
   }
 
+  public async updateMeter(id: string, data: Prisma.MeterUpdateInput): Promise<Meter> {
+    return this.prisma.meter.update({ where: { id }, data });
+  }
+
   public async deleteMeter(id: string): Promise<Meter> {
     return this.prisma.meter.delete({
       where: { id },

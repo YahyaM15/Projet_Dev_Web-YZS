@@ -9,6 +9,7 @@ import {
   counterIdSchema,
   createCounterSchema,
   recordIndexSchema,
+  updateCounterSchema,
 } from '../schemas/resource-schema';
 
 /**
@@ -35,6 +36,12 @@ export const createResourceRouter = (
   router.get('/', controller.getAllCounters);
   router.post('/', validate(createCounterSchema), controller.createCounter);
   router.post('/records', validate(recordIndexSchema), controller.recordMetric);
+  router.patch(
+    '/:counterId',
+    validate(counterIdSchema, 'params'),
+    validate(updateCounterSchema),
+    controller.updateCounter,
+  );
   router.get(
     '/:counterId',
     validate(counterIdSchema, 'params'),
