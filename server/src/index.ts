@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import cookieParser from 'cookie-parser';
 import express, { Express } from 'express';
 import rateLimit from 'express-rate-limit';
@@ -22,10 +23,13 @@ import { CalculationService } from './services/calculation.service';
 import { ResourceService } from './services/resource.service';
 
 const databaseUrl = process.env.DATABASE_URL;
+if (databaseUrl === undefined) {
+  throw new Error('DATABASE_URL must be configured.');
+}
 const prisma = new PrismaClient(
-  databaseUrl?.startsWith('prisma+postgres://') === true
+  databaseUrl.startsWith('prisma+postgres://')
     ? { accelerateUrl: databaseUrl }
-    : {},
+    : { adapter: new PrismaPg(databaseUrl) },
 );
 
 const jwtSecret = process.env.JWT_SECRET ?? 'development-secret-change-me';

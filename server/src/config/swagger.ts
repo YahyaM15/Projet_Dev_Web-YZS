@@ -34,8 +34,8 @@ const swaggerOptions: Options = {
     },
   },
   apis: [
-    toGlobPath('../routes/**/*.ts'),
-    toGlobPath('../controllers/**/*.ts'),
+    toGlobPath('../routes/**/*.{ts,js}'),
+    toGlobPath('../controllers/**/*.{ts,js}'),
   ],
 };
 
