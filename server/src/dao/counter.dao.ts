@@ -3,7 +3,9 @@ import { Meter, Prisma, PrismaClient } from '@prisma/client';
 export class CounterDao {
   public constructor(private readonly prisma: PrismaClient) {}
 
-  public async createMeter(data: Prisma.MeterCreateInput): Promise<Meter> {
+  public async createMeter(
+    data: Prisma.MeterUncheckedCreateInput,
+  ): Promise<Meter> {
     return this.prisma.meter.create({
       data,
     });

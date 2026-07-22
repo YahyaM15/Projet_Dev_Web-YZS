@@ -50,6 +50,12 @@ export class CalculationService {
     return { record, alert: null };
   }
 
+  public async getHistoricalRecords(
+    meterId: string,
+  ): Promise<ConsumptionRecord[]> {
+    return this.metricDao.getRecordsByPeriod(meterId, new Date(0), new Date());
+  }
+
   private calculateAverage(
     records: readonly ConsumptionRecord[],
   ): number | null {
