@@ -1,35 +1,29 @@
-import { Meter, Prisma, PrismaClient } from '@prisma/client';
+import { Meter, PrismaClient } from '@prisma/client';
 
 export class CounterDao {
-  public constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) {}
 
-  public async createMeter(
-    data: Prisma.MeterUncheckedCreateInput,
-  ): Promise<Meter> {
-    return this.prisma.meter.create({
-      data,
-    });
+  findAll(): Promise<Meter[]> {
+    return this.prisma.meter.findMany();
   }
 
-  public async findByUserId(userId: string): Promise<Meter[]> {
-    return this.prisma.meter.findMany({
-      where: { userId },
-    });
+  findById(id: string): Promise<Meter | null> {
+    return this.prisma.meter.findUnique({ where: { id } });
   }
 
-  public async findById(id: string): Promise<Meter | null> {
-    return this.prisma.meter.findUnique({
-      where: { id },
-    });
+  findByUserId(userId: string): Promise<Meter[]> {
+    return this.prisma.meter.findMany({ where: { userId } });
   }
 
-  public async updateMeter(id: string, data: Prisma.MeterUpdateInput): Promise<Meter> {
+  create(data: { serialNumber: string; type: 'WATER' | 'ELECTRICITY'; location: string; userId: string }): Promise<Meter> {
+    return this.prisma.meter.create({ data });
+  }
+
+  update(id: string, data: { serialNumber?: string; type?: 'WATER' | 'ELECTRICITY'; location?: string }): Promise<Meter> {
     return this.prisma.meter.update({ where: { id }, data });
   }
 
-  public async deleteMeter(id: string): Promise<Meter> {
-    return this.prisma.meter.delete({
-      where: { id },
-    });
+  delete(id: string): Promise<Meter> {
+    return this.prisma.meter.delete({ where: { id } });
   }
 }

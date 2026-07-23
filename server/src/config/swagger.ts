@@ -1,42 +1,16 @@
-import path from 'node:path';
+import swaggerJsdoc from 'swagger-jsdoc';
 
-import swaggerJSDoc, { Options } from 'swagger-jsdoc';
-
-const toGlobPath = (relativePath: string): string => {
-  return path.resolve(__dirname, relativePath).replaceAll('\\', '/');
-};
-
-const swaggerOptions: Options = {
+const options: swaggerJsdoc.Options = {
   definition: {
-    openapi: '3.0.3',
+    openapi: '3.0.0',
     info: {
-      title: 'Smart Resource Management API',
+      title: 'Smart Resource Manager API',
       version: '1.0.0',
-      description:
-        'API for intelligent water and electricity resource management.',
+      description: 'API pour la gestion des ressources (eau, électricité)',
     },
-    servers: [{ url: 'http://localhost:5000/api/v1' }],
-    security: [{ bearerAuth: [] }],
-    tags: [
-      { name: 'Auth', description: 'Authentication and user profile operations.' },
-      { name: 'Resources', description: 'Meters and consumption records.' },
-      { name: 'Alerts', description: 'Resource alert operations.' },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'Paste the JWT returned by the login endpoint.',
-        },
-      },
-    },
+    servers: [{ url: '/api/v1' }],
   },
-  apis: [
-    toGlobPath('../routes/**/*.{ts,js}'),
-    toGlobPath('../controllers/**/*.{ts,js}'),
-  ],
+  apis: ['./src/routes/*.ts'],
 };
 
-export const swaggerSpec = swaggerJSDoc(swaggerOptions);
+export const swaggerSpec = swaggerJsdoc(options);

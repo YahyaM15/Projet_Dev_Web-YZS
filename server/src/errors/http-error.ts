@@ -1,4 +1,9 @@
-import { AppError } from './AppError';
-
-/** @deprecated Use AppError. Kept for backwards compatibility. */
-export class HttpError extends AppError {}
+export class HttpError extends Error {
+  public constructor(
+    public readonly statusCode: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}

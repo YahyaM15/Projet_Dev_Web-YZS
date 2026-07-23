@@ -1,7 +1,6 @@
 import { Role } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
-
 import { HttpError } from '../errors/http-error';
 
 interface AuthTokenPayload extends jwt.JwtPayload {

@@ -1,50 +1,40 @@
 import { Prisma } from '@prisma/client';
-import { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
-import { ZodError } from 'zod';
+import { HttpError } from '../errors/http-error';
 
-import { AppError } from '../errors/AppError';
-
-interface ErrorResponse {
-  success: false;
-  message: string;
-  errors?: Array<{ path: string; message: string; code: string }>;
-}
-
-export const errorHandler: ErrorRequestHandler = (
-  error: unknown,
+export const errorHandler = (
+  err: unknown,
   _req: Request,
-  res: Response<ErrorResponse>,
+  res: Response,
   _next: NextFunction,
 ): void => {
-  if (error instanceof ZodError) {
+  if (err instanceof HttpError) {
+    res.status(err.statusCode).json({ success: false, message: err.message });
+    return;
+  }
+
+  const zodErr = (err as { issues?: Array<{ path: (string | symbol)[]; message: string; code: string }> })?.issues;
+  if (zodErr && Array.isArray(zodErr)) {
     res.status(400).json({
       success: false,
       message: 'Validation failed.',
-      errors: error.issues.map((issue) => ({
-        path: issue.path.join('.'),
-        message: issue.message,
-        code: issue.code,
+      errors: zodErr.map((e) => ({
+        path: e.path.filter((p): p is string => typeof p === 'string').join('.'),
+        message: e.message,
+        code: e.code,
       })),
     });
     return;
   }
 
-  if (error instanceof AppError) {
-    res.status(error.statusCode).json({
-      success: false,
-      message: error.message,
-    });
-    return;
-  }
-
-  if (error instanceof TokenExpiredError || error instanceof JsonWebTokenError) {
+  if (err instanceof TokenExpiredError || err instanceof JsonWebTokenError) {
     res.status(401).json({ success: false, message: 'Invalid or expired authentication token.' });
     return;
   }
 
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    const isUniqueConstraint = error.code === 'P2002';
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    const isUniqueConstraint = err.code === 'P2002';
     res.status(isUniqueConstraint ? 409 : 400).json({
       success: false,
       message: isUniqueConstraint ? 'Resource already exists.' : 'Invalid database request.',
@@ -52,7 +42,7 @@ export const errorHandler: ErrorRequestHandler = (
     return;
   }
 
-  if (error instanceof Prisma.PrismaClientValidationError) {
+  if (err instanceof Prisma.PrismaClientValidationError) {
     res.status(400).json({ success: false, message: 'Invalid request data.' });
     return;
   }
