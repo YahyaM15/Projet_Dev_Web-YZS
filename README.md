@@ -148,13 +148,25 @@ Les principaux objectifs du projet sont :
 
 ## 4. Membres du projet
 
+Le projet a été réalisé de manière collaborative. Chaque membre a participé au développement front-end, à l’intégration avec le back-end, aux tests et à la documentation, avec une responsabilité principale sur certaines parties.
+
 | Membre | Rôle principal | Responsabilités et contributions principales |
 |---|---|---|
-| Yahya MORABET — `YahyaM15` | Développement back-end et architecture API | Architecture Express, services, DAO, Prisma, contrôleurs, middlewares, authentification, sécurité, Swagger et environnement Docker |
-| Zineb CHAFIK — `ZinebChafik` | Développement front-end | Conception de l’interface, pages du tableau de bord, compteurs, alertes, sécurité, composants réutilisables et intégration avec l’API |
-| Mohammed KEHAL — `mohammedkehal` | Développement front-end et cartographie | Correction de la compatibilité Vite, intégration OpenStreetMap/Leaflet, carte interactive, marqueurs, détails des compteurs et filtres cartographiques |
+| Yahya MORABET — `YahyaM15` | Développeur full-stack — API et données | Conception de l’architecture générale, développement des routes et services Express, modélisation Prisma, gestion de PostgreSQL, authentification et autorisation, intégration des API avec le front-end, configuration Swagger, Docker et participation aux tests de l’application |
+| Zineb CHAFIK — `ZinebChafik` | Développeuse full-stack — interfaces et fonctionnalités métier | Conception des interfaces React, réalisation du tableau de bord et des pages de gestion, intégration des données provenant de l’API, gestion des formulaires et des états utilisateur, participation à la validation des données, aux tests des fonctionnalités et à l’amélioration de l’expérience utilisateur |
+| Mohammed KEHAL — `mohammedkehal` | Développeur full-stack — cartographie et qualité logicielle | Intégration de Leaflet et OpenStreetMap, développement de la carte et des filtres interactifs, exploitation des données fournies par les API, correction de la compatibilité Vite, gestion des erreurs d’affichage, tests de compilation, maintenance Git et amélioration de la documentation générale |
 
-> Cette répartition doit être ajustée par l’équipe si certaines responsabilités ont été partagées différemment.
+### Organisation du travail
+
+Les responsabilités ont été réparties de façon complémentaire :
+
+- développement et intégration des composants front-end ;
+- conception et consommation des routes back-end ;
+- gestion et validation des données ;
+- tests fonctionnels et vérification des compilations ;
+- résolution des erreurs techniques ;
+- utilisation de Git, des branches et des Pull Requests ;
+- documentation et préparation de la démonstration.
 
 ---
 
