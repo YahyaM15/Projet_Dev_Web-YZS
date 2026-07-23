@@ -1,0 +1,94 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  RESIDENTIAL
+}
+
+enum ResourceType {
+  WATER
+  ELECTRICITY
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AuditAction {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  REGISTER
+  RECORD_CREATED
+  ANOMALY_DETECTED
+  ALERT_RESOLVED
+  THRESHOLD_CONFIGURED
+  COUNTER_CREATED
+  COUNTER_UPDATED
+  COUNTER_DELETED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(RESIDENTIAL)
+  createdAt DateTime @default(now())
+  meters    Meter[]
+  auditLogs AuditLog[]
+}
+
+model Meter {
+  id           String              @id @default(uuid())
+  serialNumber String              @unique
+  type         ResourceType
+  location     String
+  latitude     Float?
+  longitude    Float?
+  userId       String
+  user         User                @relation(fields: [userId], references: [id])
+  records      ConsumptionRecord[]
+  alerts       Alert[]
+}
+
+model ConsumptionRecord {
+  id         String   @id @default(uuid())
+  meterId    String
+  meter      Meter    @relation(fields: [meterId], references: [id])
+  value      Float
+  recordDate DateTime @default(now())
+  isAnomaly  Boolean  @default(false)
+}
+
+model Alert {
+  id         String        @id @default(uuid())
+  meterId    String
+  meter      Meter         @relation(fields: [meterId], references: [id])
+  type       ResourceType
+  message    String
+  severity   AlertSeverity @default(MEDIUM)
+  isResolved Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  action    AuditAction
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id])
+  email     String?
+  ipAddress String
+  details   String?
+  createdAt DateTime    @default(now())
+}
