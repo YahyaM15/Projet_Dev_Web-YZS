@@ -151,7 +151,7 @@ Les principaux objectifs du projet sont :
 | Membre | Rôle principal | Responsabilités et contributions principales |
 |---|---|---|
 | Yahya MORABET — `YahyaM15` | Développement back-end et architecture API | Architecture Express, services, DAO, Prisma, contrôleurs, middlewares, authentification, sécurité, Swagger et environnement Docker |
-| Zineb Chafik — `ZinebChafik` | Développement front-end | Conception de l’interface, pages du tableau de bord, compteurs, alertes, sécurité, composants réutilisables et intégration avec l’API |
+| Zineb CHAFIK — `ZinebChafik` | Développement front-end | Conception de l’interface, pages du tableau de bord, compteurs, alertes, sécurité, composants réutilisables et intégration avec l’API |
 | Mohammed KEHAL — `mohammedkehal` | Développement front-end et cartographie | Correction de la compatibilité Vite, intégration OpenStreetMap/Leaflet, carte interactive, marqueurs, détails des compteurs et filtres cartographiques |
 
 > Cette répartition doit être ajustée par l’équipe si certaines responsabilités ont été partagées différemment.
