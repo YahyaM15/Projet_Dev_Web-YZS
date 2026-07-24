@@ -7,7 +7,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
-import type { Meter, ResourceType } from '../types';
+import type { ApiError, Meter, ResourceType } from '../types';
 import { AxiosError } from 'axios';
 
 const resourceTypeLabel: Record<string, string> = { WATER: 'Eau', ELECTRICITY: 'Électricité' };
@@ -46,10 +46,25 @@ export function Counters() {
     if (!form.counterNumber.trim() || !form.address.trim()) { toast('error', 'Veuillez remplir tous les champs.'); return; }
     setSaving(true);
     try {
-      if (editing) { await resourceApi.update(editing, { ...(form.type ? { type: form.type } : {}), ...(form.counterNumber ? { counterNumber: form.counterNumber } : {}), ...(form.address ? { address: form.address } : {}) }); toast('success', 'Compteur mis à jour'); }
-      else { await resourceApi.create(form); toast('success', 'Compteur créé'); }
-      setModalOpen(false); await loadCounters();
-    } catch (err) { toast('error', err instanceof AxiosError ? 'Erreur lors de la sauvegarde' : 'Erreur inattendue'); }
+      if (editing) {
+        await resourceApi.update(editing, {
+          ...(form.type ? { type: form.type } : {}),
+          ...(form.counterNumber ? { counterNumber: form.counterNumber } : {}),
+          ...(form.address ? { address: form.address } : {}),
+        });
+        toast('success', 'Compteur mis à jour et repositionné');
+      } else {
+        await resourceApi.create(form);
+        toast('success', 'Compteur créé, géolocalisé et suivi automatiquement');
+      }
+      setModalOpen(false);
+      await loadCounters();
+    } catch (err) {
+      const apiMessage = err instanceof AxiosError
+        ? (err.response?.data as ApiError | undefined)?.message
+        : undefined;
+      toast('error', apiMessage ?? 'Erreur inattendue lors de la sauvegarde');
+    }
     setSaving(false);
   };
 
@@ -143,13 +158,21 @@ export function Counters() {
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-300">Adresse</label>
-            <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })}
-              className="w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] focus:ring-2 focus:ring-cyan-500/20" />
+            <input
+              type="text"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+              placeholder="Ex. Fès, Rue 8"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-cyan-500/50 focus:bg-white/[0.08] focus:ring-2 focus:ring-cyan-500/20"
+            />
+            <p className="mt-1.5 text-xs text-slate-500">
+              La position GPS est calculée automatiquement à partir de l’adresse.
+            </p>
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={() => setModalOpen(false)} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5 transition-colors">Annuler</button>
             <button onClick={handleSave} disabled={saving} className="rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-500 transition-colors disabled:opacity-50 shadow-lg shadow-cyan-500/20">
-              {saving ? 'Enregistrement...' : editing ? 'Modifier' : 'Créer'}
+              {saving ? (editing ? 'Repositionnement...' : 'Géolocalisation...') : editing ? 'Modifier' : 'Créer'}
             </button>
           </div>
         </div>

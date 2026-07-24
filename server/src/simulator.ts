@@ -1,56 +1,107 @@
-import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { Meter, PrismaClient, ResourceType } from '@prisma/client';
 
-const databaseUrl = process.env.DATABASE_URL!;
-const prisma = new PrismaClient(
-  databaseUrl.startsWith('prisma+postgres://')
-    ? { accelerateUrl: databaseUrl }
-    : { adapter: new PrismaPg(databaseUrl) },
-);
+type MeterSnapshot = Pick<Meter, 'id' | 'serialNumber' | 'type'>;
 
-async function simulate() {
-  console.log('🤖 Simulator started. Generating consumption data every 5s...');
+export class ConsumptionSimulator {
+  private timer: NodeJS.Timeout | null = null;
+  private tickInProgress = false;
 
-  const getRandomMeter = async () => {
-    const meters = await prisma.meter.findMany();
-    return meters[Math.floor(Math.random() * meters.length)];
-  };
+  public constructor(
+    private readonly prisma: PrismaClient,
+    private readonly intervalMs = 30_000,
+  ) {}
 
-  setInterval(async () => {
-    try {
-      const meter = await getRandomMeter();
-      const baseValue = meter.type === 'WATER' ? 10 + Math.random() * 20 : 100 + Math.random() * 100;
-      const value = Math.round(baseValue * 100) / 100;
+  public start(): void {
+    if (this.timer !== null) return;
 
-      await prisma.consumptionRecord.create({
-        data: { meterId: meter.id, value, recordDate: new Date() },
+    console.log(
+      `📈 Automatic consumption simulator enabled (${this.intervalMs / 1_000}s interval).`,
+    );
+
+    void this.generateForAllMeters();
+    this.timer = setInterval(() => {
+      void this.generateForAllMeters();
+    }, this.intervalMs);
+  }
+
+  public stop(): void {
+    if (this.timer === null) return;
+    clearInterval(this.timer);
+    this.timer = null;
+    console.log('🛑 Automatic consumption simulator stopped.');
+  }
+
+  public async generateForMeter(meter: MeterSnapshot): Promise<void> {
+    const previousRecords = await this.prisma.consumptionRecord.findMany({
+      where: { meterId: meter.id },
+      orderBy: { recordDate: 'desc' },
+      take: 10,
+    });
+
+    const regularValue = this.createRegularValue(meter.type);
+    const shouldCreateSpike = previousRecords.length >= 3 && Math.random() < 0.05;
+    const value = Math.round(
+      regularValue * (shouldCreateSpike ? 2 + Math.random() : 1) * 100,
+    ) / 100;
+
+    const average = previousRecords.length === 0
+      ? null
+      : previousRecords.reduce((sum, record) => sum + record.value, 0)
+        / previousRecords.length;
+
+    const isAnomaly = average !== null && value > average * 1.5;
+
+    await this.prisma.consumptionRecord.create({
+      data: {
+        meterId: meter.id,
+        value,
+        recordDate: new Date(),
+        isAnomaly,
+      },
+    });
+
+    if (isAnomaly && average !== null) {
+      const existingAlert = await this.prisma.alert.findFirst({
+        where: { meterId: meter.id, isResolved: false },
       });
 
-      const recent = await prisma.consumptionRecord.findMany({
-        where: { meterId: meter.id },
-        orderBy: { recordDate: 'desc' },
-        take: 10,
-      });
-      const avg = recent.reduce((s, r) => s + r.value, 0) / recent.length;
-
-      if (value > avg * 1.5) {
-        await prisma.alert.create({
+      if (existingAlert === null) {
+        await this.prisma.alert.create({
           data: {
             meterId: meter.id,
             type: meter.type,
-            message: `⚠️ Consommation anormale: ${value.toFixed(1)} (moyenne: ${avg.toFixed(1)})`,
-            severity: value > avg * 2 ? 'HIGH' : 'MEDIUM',
+            message: `Consommation anormale sur ${meter.serialNumber}: ${value.toFixed(1)} (moyenne: ${average.toFixed(1)})`,
+            severity: value > average * 2 ? 'HIGH' : 'MEDIUM',
           },
         });
-        console.log(`🔔 Alert created for ${meter.serialNumber}: ${value.toFixed(1)} vs avg ${avg.toFixed(1)}`);
       }
-
-      console.log(`📊 ${meter.serialNumber}: ${value.toFixed(1)} ${meter.type === 'WATER' ? 'L' : 'Wh'}`);
-    } catch (err) {
-      console.error('Simulator error:', err);
     }
-  }, 5000);
-}
 
-simulate();
+    console.log(
+      `📊 ${meter.serialNumber}: ${value.toFixed(1)} ${meter.type === 'WATER' ? 'L' : 'Wh'}`,
+    );
+  }
+
+  private async generateForAllMeters(): Promise<void> {
+    if (this.tickInProgress) return;
+    this.tickInProgress = true;
+
+    try {
+      const meters = await this.prisma.meter.findMany({
+        select: { id: true, serialNumber: true, type: true },
+      });
+
+      await Promise.all(meters.map((meter) => this.generateForMeter(meter)));
+    } catch (error) {
+      console.error('Automatic simulator error:', error);
+    } finally {
+      this.tickInProgress = false;
+    }
+  }
+
+  private createRegularValue(type: ResourceType): number {
+    return type === 'WATER'
+      ? 10 + Math.random() * 20
+      : 100 + Math.random() * 100;
+  }
+}

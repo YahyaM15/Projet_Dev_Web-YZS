@@ -1,5 +1,22 @@
 import { Meter, PrismaClient } from '@prisma/client';
 
+type CounterCreateData = {
+  serialNumber: string;
+  type: 'WATER' | 'ELECTRICITY';
+  location: string;
+  latitude: number;
+  longitude: number;
+  userId: string;
+};
+
+type CounterUpdateData = {
+  serialNumber?: string;
+  type?: 'WATER' | 'ELECTRICITY';
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+};
+
 export class CounterDao {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -15,11 +32,22 @@ export class CounterDao {
     return this.prisma.meter.findMany({ where: { userId } });
   }
 
-  create(data: { serialNumber: string; type: 'WATER' | 'ELECTRICITY'; location: string; userId: string }): Promise<Meter> {
+  findWithoutCoordinates(): Promise<Meter[]> {
+    return this.prisma.meter.findMany({
+      where: {
+        OR: [
+          { latitude: null },
+          { longitude: null },
+        ],
+      },
+    });
+  }
+
+  create(data: CounterCreateData): Promise<Meter> {
     return this.prisma.meter.create({ data });
   }
 
-  update(id: string, data: { serialNumber?: string; type?: 'WATER' | 'ELECTRICITY'; location?: string }): Promise<Meter> {
+  update(id: string, data: CounterUpdateData): Promise<Meter> {
     return this.prisma.meter.update({ where: { id }, data });
   }
 
