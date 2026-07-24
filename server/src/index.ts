@@ -16,7 +16,9 @@ import { createApiRouter } from './routes';
 import { AlertService } from './services/alert.service';
 import { AuthService } from './services/auth.service';
 import { CalculationService } from './services/calculation.service';
+import { GeocodingService } from './services/geocoding.service';
 import { ResourceService } from './services/resource.service';
+import { ConsumptionSimulator } from './simulator';
 
 const databaseUrl = process.env.DATABASE_URL;
 if (databaseUrl === undefined) {
@@ -40,9 +42,24 @@ const metricDao = new MetricDao(prisma);
 const alertDao = new AlertDao(prisma);
 const auditLogDao = new AuditLogDao(prisma);
 
+const simulatorInterval = Number(process.env.SIMULATOR_INTERVAL_MS);
+const resolvedSimulatorInterval = Number.isInteger(simulatorInterval) && simulatorInterval >= 5_000
+  ? simulatorInterval
+  : 30_000;
+const simulatorEnabled = process.env.NODE_ENV !== 'production'
+  && process.env.AUTO_SIMULATOR !== 'false';
+const simulator = simulatorEnabled
+  ? new ConsumptionSimulator(prisma, resolvedSimulatorInterval)
+  : undefined;
+
 const authService = new AuthService(userDao, jwtSecret);
 const calculationService = new CalculationService(metricDao);
-const resourceService = new ResourceService(counterDao, calculationService);
+const resourceService = new ResourceService(
+  counterDao,
+  calculationService,
+  new GeocodingService(),
+  simulator,
+);
 const alertService = new AlertService(alertDao, counterDao);
 
 const configuredPort = Number(process.env.PORT);
@@ -58,20 +75,34 @@ const app = createApp({
   }),
 });
 
-let server: ReturnType<typeof app.listen>;
+let server: ReturnType<typeof app.listen> | undefined;
 
-try {
+const startServer = async (): Promise<void> => {
+  // Existing counters created before automatic geocoding are repaired once
+  // when the server starts. Failures are logged without blocking the API.
+  await resourceService.geocodeMissingCounters();
+
   server = app.listen(port, (): void => {
     console.log(`🚀 Server running at http://localhost:${port}`);
     console.log(`📚 Swagger UI available at http://localhost:${port}/api-docs`);
+    simulator?.start();
   });
-} catch (err) {
-  console.error('💥 Failed to start server:', err);
+};
+
+void startServer().catch((error: unknown): void => {
+  console.error('💥 Failed to start server:', error);
   process.exit(1);
-}
+});
 
 const shutdown = (signal: NodeJS.Signals): void => {
   console.log(`\n🛑 ${signal} received. Closing server...`);
+  simulator?.stop();
+
+  if (server === undefined) {
+    void prisma.$disconnect().finally(() => process.exit(0));
+    return;
+  }
+
   server.close((serverError?: Error): void => {
     void prisma
       .$disconnect()
